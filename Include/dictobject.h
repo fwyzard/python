@@ -7,6 +7,16 @@ extern "C" {
 
 /* Dictionary object type -- mapping from hashable object to object */
 
+/* Key Insertion Order (KIO) dictionary implementation using a hash table
+   and a vector of pointers to the items.
+
+   Adapted from ordereddict at https://pypi.python.org/pypi/ruamel.ordereddict/
+   Copyright (c) 2007 and later  Anthon van der Neut, released under the
+   MIT license.
+
+   Ported to Python 2.7.x by  Andrea Bocci <fwyzard@gmail.com>.
+*/
+
 /* The distribution includes a separate file, Objects/dictnotes.txt,
    describing explorations into dictionary design and optimization.
    It covers typical dictionary use patterns, the parameters for
@@ -86,6 +96,9 @@ struct _dictobject {
     PyDictEntry *ma_table;
     PyDictEntry *(*ma_lookup)(PyDictObject *mp, PyObject *key, long hash);
     PyDictEntry ma_smalltable[PyDict_MINSIZE];
+    /* for small arrays,  table pointer points to small array of tables */
+    PyDictEntry **ma_otablep;
+    PyDictEntry *ma_smallotablep[PyDict_MINSIZE];
 };
 
 PyAPI_DATA(PyTypeObject) PyDict_Type;

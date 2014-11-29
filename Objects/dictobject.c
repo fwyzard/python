@@ -863,6 +863,25 @@ PyDict_SetItem(register PyObject *op, PyObject *key, PyObject *value)
     return dict_set_item_by_hash_or_entry(op, key, hash, NULL, value);
 }
 
+void
+PyDict_Invert(PyDictObject *op)
+{
+    PyDictEntry *tmp, **ipp, **jpp;
+    Py_ssize_t count;
+
+    ipp = op->ma_otablep;
+    jpp = op->ma_otablep + op->ma_used - 1;
+    count = op->ma_used / 2;
+    while (count > 0) {
+      tmp = *ipp;
+      *ipp = *jpp;
+      *jpp = tmp;
+      --count;
+      ++ipp;
+      --jpp;
+    }
+}
+
 static int
 del_inorder(PyDictObject *op, PyDictEntry* ep)
 {

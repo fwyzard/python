@@ -4142,6 +4142,7 @@ update_keyword_args(PyObject *orig_kwdict, int nk, PyObject ***pp_stack,
     else {
         kwdict = PyDict_Copy(orig_kwdict);
         Py_DECREF(orig_kwdict);
+        PyDict_Invert((PyDictObject *) kwdict);
     }
     if (kwdict == NULL)
         return NULL;
@@ -4169,6 +4170,7 @@ update_keyword_args(PyObject *orig_kwdict, int nk, PyObject ***pp_stack,
             return NULL;
         }
     }
+    PyDict_Invert((PyDictObject *) kwdict);
     return kwdict;
 }
 

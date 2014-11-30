@@ -670,16 +670,13 @@ dictresize(PyDictObject *mp, Py_ssize_t minused)
         }
     }
     else {
-        newtable = PyMem_NEW(PyDictEntry, newsize);
-        if (newtable == NULL) {
+        void * buffer = PyMem_MALLOC(newsize * (sizeof(PyDictEntry)+sizeof(PyDictEntry*)));
+        if (buffer == NULL) {
             PyErr_NoMemory();
             return -1;
         }
-        newotablep = PyMem_NEW(PyDictEntry*, newsize);
-        if (newotablep == NULL) {
-            PyErr_NoMemory();
-            return -1;
-        }
+        newtable = (PyDictEntry*) buffer;
+        newotablep = (PyDictEntry**) (buffer + newsize * sizeof(PyDictEntry));
     }
 
     /* Make the dict empty, using the new table. */
@@ -715,10 +712,8 @@ dictresize(PyDictObject *mp, Py_ssize_t minused)
         /* else key == value == NULL:  nothing to do */
     }
 
-    if (is_oldtable_malloced) {
-        PyMem_DEL(oldtable);
-        PyMem_DEL(oldotablep);
-    }
+    if (is_oldtable_malloced)
+        PyMem_FREE((void *) oldtable);
     return 0;
 }
 
@@ -942,7 +937,7 @@ void
 PyDict_Clear(PyObject *op)
 {
     PyDictObject *mp;
-    PyDictEntry *ep, *table, **otablep;
+    PyDictEntry *ep, *table;
     int table_is_malloced;
     Py_ssize_t fill;
     PyDictEntry small_copy[PyDict_MINSIZE];
@@ -959,9 +954,7 @@ PyDict_Clear(PyObject *op)
 #endif
 
     table = mp->ma_table;
-    otablep = mp->ma_otablep;
     assert(table != NULL);
-    assert(otablep != NULL);
     table_is_malloced = table != mp->ma_smalltable;
 
     /* This is delicate.  During the process of clearing the dict,
@@ -1005,10 +998,8 @@ PyDict_Clear(PyObject *op)
 #endif
     }
 
-    if (table_is_malloced) {
-        PyMem_DEL(table);
-        PyMem_DEL(otablep);
-    }
+    if (table_is_malloced)
+        PyMem_FREE((void *) table);
 }
 
 /*
@@ -1092,10 +1083,8 @@ dict_dealloc(register PyDictObject *mp)
             Py_XDECREF(ep->me_value);
         }
     }
-    if (mp->ma_table != mp->ma_smalltable) {
-        PyMem_DEL(mp->ma_table);
-        PyMem_DEL(mp->ma_otablep);
-    }
+    if (mp->ma_table != mp->ma_smalltable)
+        PyMem_FREE((void *) mp->ma_table);
     if (numfree < PyDict_MAXFREELIST && Py_TYPE(mp) == &PyDict_Type)
         free_list[numfree++] = mp;
     else
